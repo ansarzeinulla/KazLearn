@@ -1,32 +1,33 @@
-from transformers import GPT2LMHeadModel, GPT2Tokenizer
-import torch
 
-# 1. Choose device
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+import requests
 
-# 2. Load model and tokenizer from your folder
-model_path = "models/mGPT-1.3B-kazakh"
-tokenizer = GPT2Tokenizer.from_pretrained(model_path)
-model = GPT2LMHeadModel.from_pretrained(model_path).to(device)
-model.eval()
+# Replace with your actual values
+API_KEY = 'ezDqBEZN.5iVQlBt4QC0Ka7GBTcf8KIX5KBFyKA1P'
+ASSISTANT_ID = 1164  # or the actual assistant ID you're targeting
+TEXT_PROMPT = 'ОСЫ СӨЙЛЕМДЕГІ ГРАММАТИКАЛЫҚ ҚАТЕЛЕРДІ ТАУЫП, ДҰРЫСТАП, ТҮСІНДІР: Сәлеметсіз бе! Мен атым Аңсар.'
 
-# 3. Tokenize your prompt (Kazakh text)
-prompt = "Сәлем әлем!"
-input_ids = tokenizer.encode(prompt, return_tensors="pt").to(device)
+# API URL
+url = f'https://oylan.nu.edu.kz/api/v1/assistant/{ASSISTANT_ID}/interactions/'
 
-# 4. Generate output
-outputs = model.generate(
-    input_ids,
-    max_length=100,
-    min_length=50,
-    eos_token_id=5,            # end‑of‑sentence token
-    pad_token_id=1,            # padding token
-    top_k=10,
-    top_p=0.8,
-    no_repeat_ngram_size=4,
-    do_sample=True
-)
+# Request headers
+headers = {
+    'accept': 'application/json',
+    'Authorization': f'Api-Key {API_KEY}',
+}
 
-# 5. Decode and print
-generated = tokenizer.decode(outputs[0], skip_special_tokens=True)
-print(generated)
+# Form data payload
+data = {
+    'content': TEXT_PROMPT,
+    'assistant': str(ASSISTANT_ID),
+    'stream': 'false',  # or 'true' if you support streaming
+}
+
+# Send the POST request
+response = requests.post(url, headers=headers, data=data)
+
+# Handle the response
+if response.status_code in (200, 201):
+    json_response = response.json()
+    print("Assistant response:", json_response['response']['content'])
+else:
+    print(f"Error {response.status_code}:", response.text)
